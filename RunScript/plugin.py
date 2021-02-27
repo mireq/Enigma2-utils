@@ -22,8 +22,9 @@ def redirect_stdout(new_target):
 			sys.stdout, sys.stderr = old_stdout, old_stderr
 
 
-def run_server():
+def run_server(session):
 	sys.stderr.write("RunScript started server\n")
+
 	while True:
 		try:
 			fifo = open('/tmp/run_script.fifo', 'r')
@@ -48,7 +49,7 @@ def run_server():
 						continue
 					with open(command, 'r') as script_fp:
 						script = script_fp.read()
-					exec(script)
+					exec(script, {'session': session})
 			except Exception as e:
 				traceback.print_exc()
 
@@ -59,6 +60,10 @@ def run_server():
 def autostart(reason, **kwargs):
 	sys.stderr.write("RunScript %d\n" % reason)
 	if reason == 0:
+		session = kwargs.get('session')
+		sys.stderr.write("RunScript %s\n" % session)
+		if session is None:
+			return
 		try:
 			os.mkfifo('/tmp/run_script.fifo', 0o666)
 		except OSError:
@@ -67,7 +72,7 @@ def autostart(reason, **kwargs):
 			os.mkfifo('/tmp/run_script_output.fifo', 0o666)
 		except OSError:
 			pass
-		thread = Thread(target=run_server)
+		thread = Thread(target=run_server, args=(kwargs.get('session'),))
 		thread.start()
 	elif reason == 1:
 		try:
@@ -78,5 +83,5 @@ def autostart(reason, **kwargs):
 			pass
 
 
-def Plugins(**kwargs): 
-	return PluginDescriptor(name="Run script", description="Run script form /tmp/run_script.fifo", where=PluginDescriptor.WHERE_AUTOSTART, fnc=autostart)
+def Plugins(**kwargs):
+	return PluginDescriptor(name="Run script", description="Run script form /tmp/run_script.fifo", where=[PluginDescriptor.WHERE_SESSIONSTART, PluginDescriptor.WHERE_AUTOSTART], fnc=autostart)
