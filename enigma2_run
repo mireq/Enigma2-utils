@@ -1,0 +1,3 @@
+#!/bin/bash
+
+(cat /tmp/run_script_output.fifo &);echo $1|cat > /tmp/run_script.fifo
