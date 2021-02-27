@@ -1,3 +1,9 @@
 #!/bin/bash
 
-(cat /tmp/run_script_output.fifo &);echo `realpath ${1}`|cat > /tmp/run_script.fifo
+script=$1
+if [ -f $script ]; then
+	script=`realpath ${1}`
+fi
+
+(cat /tmp/run_script_output.fifo &);echo $script > /tmp/run_script.fifo
+wait
